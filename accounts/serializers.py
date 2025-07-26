@@ -4,5 +4,5 @@ from accounts.models import User
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        modal = User
+        model = User
         fields = ['id', 'name', 'email']
