@@ -3,7 +3,7 @@ from django.db import models
 from accounts.models import User
 
 
-class Tag(models.Modeel):
+class Tag(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
 
