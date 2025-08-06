@@ -7,10 +7,10 @@ from rest_framework.exceptions import APIException
 from core.utils.exceptions import ValidationError
 from core.utils.formatters import format_serializer_error
 from courses.filters import CourseFilter
-from courses.models import Course, Enrollment
+from courses.models import Course, Enrollment, WatchedLesson
 from courses.serializers import CourseSerializer, ReviewSerializer
 
-from django.db.models import Avg, Count
+from django.db.models import Avg, Count, Sum
 
 class CourseViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Course.objects.all().order_by('-created_at')
@@ -78,3 +78,30 @@ class CourseViewSet(viewsets.ReadOnlyModelViewSet):
             **serializer.data,
             'enrolled_at': enrolled_at
         })
+    
+    @decorators.action(detail=True, methods=['get'])
+    def content(self, request: Request, pk=None):
+        course = self.get_object()
+        
+        modules = Module.objects.filter(course=course)
+        total_modules = modules.count()
+
+        lessons = Lesson.objects.filter(module__course=course)
+        total_lessons = lessons.count()
+
+        total_time = lessons.aggregate(
+            total=Sum('time_estimate')
+        )['total'] or 0
+
+        watched_lessons_cout = 0
+        watched_lessons_set = set()
+
+        if request.user.is_authenticated:
+            watched_lessons = WatchedLesson.objects.filter(
+                user=request.user,
+                lesson__in=lessons
+            ).vales_list('lesson_id', flat=True)
+
+            watched_lessons_set = set(watched_lessons)
+            watched_lessons_cout = len(watched_lessons_set)
+            # Endpoint não finalizado, acompanhar a aula 32 
